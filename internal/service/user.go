@@ -8,68 +8,30 @@ import (
 )
 
 func GetUserList() ([]model.User, error) {
-	users := onmemory.Users
+	users := onmemory.GetAll()
 	return users, nil
 }
 
 func GetUserByID(id int) (model.User, error) {
-	for _, user := range onmemory.Users {
-		if user.ID == id {
-			return user, nil
-		}
-	}
-	return model.User{}, errors.New("user not found")
+	return onmemory.GetByID(id)
 }
 
 func CreateUser(user model.User) (int, error) {
-	newRandomId := len(onmemory.Users) + 1
-	user.ID = newRandomId
-	onmemory.Users = append(onmemory.Users, user)
-	return newRandomId, nil
+	return onmemory.Create(user)
 }
 
 func UpdateUserByID(id int, updated model.User) error {
-	for i, user := range onmemory.Users {
-		if user.ID == id {
-			updated.ID = id
-			onmemory.Users[i] = updated
-			return nil
-		}
-	}
-	return errors.New("user not found")
+	return onmemory.UpdateByID(id, updated)
 }
 
 func DeleteUserByID(id int) error {
-	for i, user := range onmemory.Users {
-		if user.ID == id {
-			onmemory.Users = append(onmemory.Users[:i], onmemory.Users[i+1:]...)
-			return nil
-		}
-	}
-	return errors.New("user not found")
+	return onmemory.DeleteByID(id)
 }
 
 func AddMobileNumber(id int, number model.MobileNumber) error {
-	for i, user := range onmemory.Users {
-		if user.ID == id {
-			onmemory.Users[i].MobileNumbers = append(onmemory.Users[i].MobileNumbers, number)
-			return nil
-		}
-	}
-	return errors.New("user not found")
+	return onmemory.AddMobileNumber(id, number)
 }
 
 func DeleteMobileNumber(id int, number string) error {
-	for i, user := range onmemory.Users {
-		if user.ID == id {
-			for j, num := range user.MobileNumbers {
-				if num.Number == number {
-					onmemory.Users[i].MobileNumbers = append(user.MobileNumbers[:j], user.MobileNumbers[j+1:]...)
-					return nil
-				}
-			}
-			return errors.New("mobile number not found")
-		}
-	}
-	return errors.New("user not found")
+	return onmemory.DeleteMobileNumber(id, number)
 }
