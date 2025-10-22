@@ -3,41 +3,55 @@ package handler
 import (
 	"time"
 
-	"github.com/Golang-Training-entry-3/mobile-numbers/internal/api/middleware"
-	"github.com/Golang-Training-entry-3/mobile-numbers/internal/service"
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v5"
 )
 
-type LoginRequest struct {
-	Name string `json:"name"`
-}
+var jwtSecret = []byte("super-secret-key")
 
 func Login(c *fiber.Ctx) error {
-	var req LoginRequest
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid request body"})
+	type LoginInput struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
 	}
 
-	users, _ := service.GetUserList()
-	var found *int
-	for _, u := range users {
-		if u.Name == req.Name {
-			id := u.ID
-			found = &id
-			break
-		}
+	var input LoginInput
+	if err := c.BodyParser(&input); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request"})
 	}
 
-	if found == nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "user not found"})
+	if input.Username != "admin" || input.Password != "1234" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid credentials"})
 	}
 
-	token, err := middleware.GenerateToken(*found, 24*time.Hour)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to generate token"})
-	}
-
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"token": token,
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"username": input.Username,
+		"exp":      time.Now().Add(time.Hour * 2).Unix(),
 	})
+
+	tokenString, err := token.SignedString(jwtSecret)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Token creation failed"})
+	}
+
+	return c.JSON(fiber.Map{
+		"token": tokenString,
+	})
+}
+
+func JWTMiddleware(c *fiber.Ctx) error {
+	authHeader := c.Get("Authorization")
+	if authHeader == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Missing Authorization header"})
+	}
+
+	token, err := jwt.Parse(authHeader, func(token *jwt.Token) (interface{}, error) {
+		return jwtSecret, nil
+	})
+
+	if err != nil || !token.Valid {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid or expired token"})
+	}
+
+	return c.Next()
 }
