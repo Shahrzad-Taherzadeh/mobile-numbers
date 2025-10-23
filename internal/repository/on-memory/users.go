@@ -8,15 +8,15 @@ import (
 )
 
 var (
-	users []model.User
+	Users []model.User
 	mu    sync.RWMutex
 )
 
 func LoadInitUsers() {
 	Create(model.User{
-		Name:       "Ashva",
-		FamilyName: "Patel",
-		Age:        24,
+		Name:       "Shahrzad",
+		FamilyName: "Taherzadeh",
+		Age:        17,
 		IsMarried:  false,
 	})
 }
@@ -25,8 +25,8 @@ func GetAll() []model.User {
 	mu.RLock()
 	defer mu.RUnlock()
 
-	cpy := make([]model.User, len(users))
-	copy(cpy, users)
+	cpy := make([]model.User, len(Users))
+	copy(cpy, Users)
 	return cpy
 }
 
@@ -34,7 +34,7 @@ func GetByID(id int) (model.User, error) {
 	mu.RLock()
 	defer mu.RUnlock()
 
-	for _, u := range users {
+	for _, u := range Users {
 		if u.ID == id {
 			return u, nil
 		}
@@ -46,12 +46,12 @@ func Create(u model.User) (int, error) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	newID := len(users) + 1
+	newID := len(Users) + 1
 	u.ID = newID
 	if u.MobileNumbers == nil {
 		u.MobileNumbers = []model.MobileNumber{}
 	}
-	users = append(users, u)
+	Users = append(Users, u)
 	return newID, nil
 }
 
@@ -59,13 +59,13 @@ func UpdateByID(id int, updated model.User) error {
 	mu.Lock()
 	defer mu.Unlock()
 
-	for i := range users {
-		if users[i].ID == id {
+	for i := range Users {
+		if Users[i].ID == id {
 			updated.ID = id
 			if updated.MobileNumbers == nil {
-				updated.MobileNumbers = users[i].MobileNumbers
+				updated.MobileNumbers = Users[i].MobileNumbers
 			}
-			users[i] = updated
+			Users[i] = updated
 			return nil
 		}
 	}
@@ -76,9 +76,9 @@ func DeleteByID(id int) error {
 	mu.Lock()
 	defer mu.Unlock()
 
-	for i := range users {
-		if users[i].ID == id {
-			users = append(users[:i], users[i+1:]...)
+	for i := range Users {
+		if Users[i].ID == id {
+			Users = append(Users[:i], Users[i+1:]...)
 			return nil
 		}
 	}
@@ -89,9 +89,9 @@ func AddMobileNumber(id int, num model.MobileNumber) error {
 	mu.Lock()
 	defer mu.Unlock()
 
-	for i := range users {
-		if users[i].ID == id {
-			users[i].MobileNumbers = append(users[i].MobileNumbers, num)
+	for i := range Users {
+		if Users[i].ID == id {
+			Users[i].MobileNumbers = append(Users[i].MobileNumbers, num)
 			return nil
 		}
 	}
@@ -102,11 +102,11 @@ func DeleteMobileNumber(id int, number string) error {
 	mu.Lock()
 	defer mu.Unlock()
 
-	for i := range users {
-		if users[i].ID == id {
-			for j, n := range users[i].MobileNumbers {
+	for i := range Users {
+		if Users[i].ID == id {
+			for j, n := range Users[i].MobileNumbers {
 				if n.Number == number {
-					users[i].MobileNumbers = append(users[i].MobileNumbers[:j], users[i].MobileNumbers[j+1:]...)
+					Users[i].MobileNumbers = append(Users[i].MobileNumbers[:j], Users[i].MobileNumbers[j+1:]...)
 					return nil
 				}
 			}
