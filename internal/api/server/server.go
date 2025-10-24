@@ -5,32 +5,23 @@ import (
 
 	"github.com/Golang-Training-entry-3/mobile-numbers/internal/api/handler"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 )
 
 func Start() {
 	app := fiber.New()
+	SetGlobalHandlers(app)
+	SetupRoutes(app)
+	log.Println(app.Listen(":8080"))
+}
 
+func SetGlobalHandlers(app *fiber.App) {
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
 		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
 	}))
-
 	app.Use(logger.New())
+	app.Use(handler.ValidateJwtToken)
 
-	app.Post("/login", handler.Login)
-
-	app.Use(handler.JWTMiddleware) 
-
-	app.Get("/user", handler.GetUserList)
-	app.Get("/user/:id", handler.GetUserByID)
-	app.Post("/user", handler.CreateUser)
-	app.Put("/user/:id", handler.UpdateUserByID)
-	app.Delete("/user/:id", handler.DeleteUserByID)
-
-	app.Post("/user/:id/mobile-number", handler.AddMobileNumber)
-	app.Delete("/user/:id/mobile-number/:number", handler.DeleteMobileNumber)
-
-	log.Println(app.Listen(":8080"))
 }

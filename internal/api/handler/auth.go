@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -25,8 +26,9 @@ func Login(c *fiber.Ctx) error {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"username": input.Username,
-		"exp":      time.Now().Add(time.Hour * 2).Unix(),
+		"username":  input.Username,
+		"exp":       time.Now().Add(time.Hour * 2).Unix(),
+		"client_ip": c.IP(),
 	})
 
 	tokenString, err := token.SignedString(jwtSecret)
@@ -39,15 +41,26 @@ func Login(c *fiber.Ctx) error {
 	})
 }
 
-func JWTMiddleware(c *fiber.Ctx) error {
+func ValidateJwtToken(c *fiber.Ctx) error {
+	var (
+		token *jwt.Token
+		err   error
+	)
+
 	authHeader := c.Get("Authorization")
 	if authHeader == "" {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Missing Authorization header"})
 	}
 
-	token, err := jwt.Parse(authHeader, func(token *jwt.Token) (interface{}, error) {
-		return jwtSecret, nil
-	})
+	jwtToken := strings.TrimPrefix(authHeader, "Bearer ")
+
+	if len(jwtToken) != 0 {
+		token, err = jwt.Parse(authHeader, func(token *jwt.Token) (interface{}, error) {
+			return jwtSecret, nil
+		})
+	} else {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Missing or malformed token"})
+	}
 
 	if err != nil || !token.Valid {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid or expired token"})
