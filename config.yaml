@@ -1,0 +1,8 @@
+server:
+  port: 8080
+  jwt_secret: "super-secret-key" 
+  
+redis:
+  address: "localhost:6379"
+  password: ""
+  db: 0 
